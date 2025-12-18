@@ -1,0 +1,4 @@
+Dota
+    Need to refactor the code so recalculating the scores only does that
+    Need to do some testing with the files not existing and fix
+
