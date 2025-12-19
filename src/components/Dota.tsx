@@ -19,14 +19,15 @@ import {
 } from '@mui/material';
 
 interface Match {
-  match_id: string;
-  radiant_team_name: string;
-  dire_team_name: string;
+  match_id: string | number;
+  radiant_team_name?: string;
+  dire_team_name?: string;
   final_score: number;
   user_score?: number;
   user_title?: string;
-  duration: number;
-  radiant_win: boolean;
+  duration_min?: number;
+  title?: string;
+  tournament?: string;
 }
 
 const DOTA_API_URL = 'https://dota-production-9f0c.up.railway.app';
@@ -121,7 +122,7 @@ const Dota: React.FC = () => {
         <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell>Teams</TableCell>
+              <TableCell>Title</TableCell>
               <TableCell align="right">Score</TableCell>
               <TableCell align="right">Duration</TableCell>
               <TableCell align="center">Your Rating</TableCell>
@@ -132,11 +133,11 @@ const Dota: React.FC = () => {
             {matches.slice(0, 50).map((match) => (
               <TableRow key={match.match_id} hover>
                 <TableCell>
-                  <Typography variant="body2">
-                    {match.radiant_team_name || 'Radiant'} vs {match.dire_team_name || 'Dire'}
+                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                    {match.title || `${match.radiant_team_name || 'Radiant'} vs ${match.dire_team_name || 'Dire'}`}
                   </Typography>
                   <Typography variant="caption" color="textSecondary">
-                    ID: {match.match_id}
+                    Match ID: {match.match_id}
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
@@ -146,7 +147,7 @@ const Dota: React.FC = () => {
                 </TableCell>
                 <TableCell align="right">
                   <Typography variant="body2">
-                    {Math.floor(match.duration / 60)}m
+                    {typeof match.duration_min === 'number' ? `${match.duration_min}m` : '—'}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
