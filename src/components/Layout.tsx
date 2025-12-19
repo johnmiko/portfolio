@@ -35,7 +35,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <Box component="footer" sx={{ py: 3, px: 2, mt: 'auto', backgroundColor: 'grey.100' }}>
         <Container maxWidth="sm">
           <Typography variant="body1" align="center">
-            Contact: mickeywmiko@gmail.com | 587-700-2734
+            Contact: johnmiko4@gmail.com | 587-700-2734
           </Typography>
         </Container>
       </Box>
