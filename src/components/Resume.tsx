@@ -51,13 +51,13 @@ const Resume: React.FC = () => {
       </Box>
 
       <Typography variant="h3" component="h1" gutterBottom>
-        JOHN MIKO
+        MICKEY MIKO
       </Typography>
       <Typography variant="h5" component="h2" gutterBottom>
         Mechatronics Engineer
       </Typography>
       <Box sx={{ mb: 2 }}>
-        <Link href="mailto:johnmiko4@gmail.com" sx={{ mr: 2 }}>johnmiko4@gmail.com</Link>·
+        <Link href="mailto:mickeywmiko@gmail.com" sx={{ mr: 2 }}>mickeywmiko@gmail.com</Link>·
         <Link href="tel:+15877002734" sx={{ mr: 2 }}>587-700-2734</Link>·
         <Link href="https://linkedin.com/in/john-miko" sx={{ mr: 2 }}>linkedin.com/in/john-miko</Link>·
         <Link href="https://github.com/johnmiko">github.com/johnmiko</Link>
