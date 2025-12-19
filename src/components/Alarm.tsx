@@ -27,20 +27,12 @@ interface Medication {
 
 const medications: Medication[] = [
   {
-    id: 'serrapeptase',
-    name: 'Serrapeptase',
-    description: 'Empty stomach, proteolytic enzyme',
-    minTime: 30,
-    optimalTime: 60,
-    efficiency: { 30: 85, 45: 95, 60: 100 },
-  },
-  {
     id: 'batch1',
     name: 'Vitamin Batch 1',
     description: 'Sertraline, quetiapine, fish oil, etc. (take with fat)',
     minTime: 0,
-    optimalTime: 0,
-    relativeTo: 'serrapeptase',
+    optimalTime: 30,
+    efficiency: { 0: 60, 10: 75, 20: 88, 30: 100 },
   },
   {
     id: 'batch2',
@@ -128,7 +120,7 @@ const Alarm: React.FC = () => {
       startTime = new Date();
     }
 
-    setStartTimes({ serrapeptase: startTime });
+    setStartTimes({ batch1: startTime });
     setCurrentPhase(0);
     setTakenTimes({});
     setEfficiencyAlerts(new Set());
@@ -233,17 +225,33 @@ const Alarm: React.FC = () => {
     return (currentTime.getTime() - startTime.getTime()) / 1000 / 60; // minutes
   };
 
-  const getEfficiency = (med: Medication, elapsed: number): number => {
-    if (!med.efficiency) return 100;
+const getEfficiency = (med: Medication, elapsed: number): number => {
+  if (!med.efficiency) return 100;
 
-    const times = Object.keys(med.efficiency).map(Number).sort((a, b) => a - b);
-    for (const time of times) {
-      if (elapsed >= time) {
-        return med.efficiency[time];
-      }
+  const times = Object.keys(med.efficiency).map(Number).sort((a, b) => a - b);
+
+  // If elapsed is before the first time point, return 0
+  if (elapsed < times[0]) return 0;
+
+  // If elapsed is at or beyond the last time point, return the last efficiency
+  if (elapsed >= times[times.length - 1]) return med.efficiency[times[times.length - 1]];
+
+  // Find the two time points to interpolate between
+  for (let i = 0; i < times.length - 1; i++) {
+    const time1 = times[i];
+    const time2 = times[i + 1];
+    const efficiency1 = med.efficiency[time1];
+    const efficiency2 = med.efficiency[time2];
+
+    if (elapsed >= time1 && elapsed < time2) {
+      // Linear interpolation: y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)
+      const interpolatedEfficiency = efficiency1 + (elapsed - time1) * (efficiency2 - efficiency1) / (time2 - time1);
+      return Math.round(interpolatedEfficiency); // Round to nearest integer
     }
-    return 0;
-  };
+  }
+
+  return 0;
+};
 
   const getStatusColor = (med: Medication, index: number): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
     if (takenTimes[med.id]) return 'success';

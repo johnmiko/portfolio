@@ -37,7 +37,7 @@ const Resume: React.FC = () => {
   const keywords = ['Python', 'Backend Development', 'Automation Testing', 'Cloud Computing', 'Machine Learning'];
 
   return (
-    <Paper sx={{ p: 3, fontFamily, width: '100%' }}>
+    <Paper sx={{ p: 3, fontFamily, maxWidth: '800px', mx: 'auto' }}>
       <Box sx={{ mb: 3 }}>
         <FormControl fullWidth>
           <InputLabel>Resume Font</InputLabel>

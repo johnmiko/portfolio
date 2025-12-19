@@ -19,19 +19,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-  <AppBar position="static">
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <AppBar position="static">
         <Toolbar>
-          <Tabs value={getTabValue()} textColor="inherit" indicatorColor="secondary" sx={{ width: '100%' }}>
+          <Tabs value={getTabValue()} textColor="inherit" indicatorColor="secondary">
             <Tab label="Resume" component={Link} to="/" />
             <Tab label="Dota" component={Link} to="/dota" />
             <Tab label="Alarm" component={Link} to="/alarm" />
           </Tabs>
         </Toolbar>
       </AppBar>
-      <Box component="main" sx={{ flexGrow: 1, py: 3, px: 0 }}>
+      <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
         {children}
-      </Box>
+      </Container>
       <Box component="footer" sx={{ py: 3, px: 2, mt: 'auto', backgroundColor: 'grey.100' }}>
         <Container maxWidth="sm">
           <Typography variant="body1" align="center">
