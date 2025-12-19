@@ -106,23 +106,16 @@ const Dota: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
         Dota 2 Match Finder
       </Typography>
       <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-        Note: Currently only for personal use. Do not have any user specification to distinguish who is rating the match
-        The purpose of rating the match is to have some manual check to see how accurate the scores are 
-        Top-scored Dota 2 games, ranked by automatic analysis. Click a match to rate it.        
+        Note: Currently only for personal use.<br />
+        Do not have any user specification to distinguish who is rating the match.<br />
+        The purpose of rating the match is to have some manual check to see how accurate the scores are.<br />
+        Top-scored Dota 2 games, ranked by automatic analysis. Click a match to rate it.
       </Typography>
 
       {error && (
@@ -144,53 +137,67 @@ const Dota: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {matches.slice(0, 50).map((match) => (
-              <TableRow key={match.match_id} hover>
-                <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {match.title || `${match.radiant_team_name || 'Radiant'} vs ${match.dire_team_name || 'Dire'}`}
-                  </Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    Match ID: {match.match_id}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {Math.round(match.final_score)}
-                  </Typography>
-                </TableCell>
-                <TableCell align="left">
-                  <Typography variant="body2">
-                    {match.days_ago_pretty || '—'}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  <Typography variant="body2">
-                    {typeof match.duration_min === 'number' ? `${match.duration_min}m` : '—'}
-                  </Typography>
-                </TableCell>
-                <TableCell align="center">
-                  {match.user_score ? (
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                      {match.user_score}
-                    </Typography>
-                  ) : (
-                    <Typography variant="caption" color="textSecondary">
-                      —
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => openRatingDialog(match)}
-                  >
-                    Rate
-                  </Button>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
+                  <CircularProgress />
                 </TableCell>
               </TableRow>
-            ))}
+            ) : matches.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography color="textSecondary">No matches found</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              matches.slice(0, 50).map((match) => (
+                <TableRow key={match.match_id} hover>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      {match.title || `${match.radiant_team_name || 'Radiant'} vs ${match.dire_team_name || 'Dire'}`}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Match ID: {match.match_id}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      {Math.round(match.final_score)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="left">
+                    <Typography variant="body2">
+                      {match.days_ago_pretty || '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="body2">
+                      {typeof match.duration_min === 'number' ? `${match.duration_min}m` : '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    {match.user_score ? (
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                        {match.user_score}
+                      </Typography>
+                    ) : (
+                      <Typography variant="caption" color="textSecondary">
+                        —
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => openRatingDialog(match)}
+                    >
+                      Rate
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
