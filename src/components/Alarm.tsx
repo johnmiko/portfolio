@@ -266,7 +266,7 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
         Medication Timing Alarm
       </Typography>
       <Typography variant="body1" paragraph>
-        Optimized medication timing system with efficiency tracking and flexible alarm windows.
+        Currently recovering from mold poisoning. Create a custom alarm system to more easily track when to take anti fungals and vitamins with efficiency tracking.
       </Typography>
 
       {mealTime && (
