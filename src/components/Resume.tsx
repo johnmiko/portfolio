@@ -17,7 +17,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const Resume: React.FC = () => {
-  const [fontFamily, setFontFamily] = useState('Roboto');
+  const [fontFamily, setFontFamily] = useState('Arial');
 
   const handleFontChange = (event: SelectChangeEvent) => {
     setFontFamily(event.target.value);
@@ -37,18 +37,9 @@ const Resume: React.FC = () => {
   const keywords = ['Python', 'Backend Development', 'Automation Testing', 'Cloud Computing', 'Machine Learning'];
 
   return (
-    <Paper sx={{ p: 3, fontFamily, maxWidth: '800px', mx: 'auto' }}>
-      <Box sx={{ mb: 3 }}>
-        <FormControl fullWidth>
-          <InputLabel>Resume Font</InputLabel>
-          <Select value={fontFamily} label="Resume Font" onChange={handleFontChange}>
-            <MenuItem value="Roboto">Roboto</MenuItem>
-            <MenuItem value="Arial">Arial</MenuItem>
-            <MenuItem value="Times New Roman">Times New Roman</MenuItem>
-            <MenuItem value="Courier New">Courier New</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+    <Box sx={{ display: 'flex', gap: 3, p: 2, minHeight: '100vh', justifyContent: 'space-between' }}>
+      {/* Resume centered */}
+      <Paper sx={{ p: 3, fontFamily, width: '800px', flexShrink: 0 }}>
 
       <Typography variant="h3" component="h1" gutterBottom>
         JOHN (MICKEY) MIKO
@@ -70,9 +61,9 @@ const Resume: React.FC = () => {
         Experience
       </Typography>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Senior Test Engineer - SMART</Typography>
+          <Typography variant="h6">Senior Test Engineer - SMART Technologies</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography variant="body2" color="text.secondary">2025 – Present (6 months)</Typography>
@@ -83,9 +74,9 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Test Automation Engineer - SMART</Typography>
+          <Typography variant="h6">Test Automation Engineer - SmartD</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography variant="body2" color="text.secondary">2023 – 2024 (1.5 years)</Typography>
@@ -98,7 +89,7 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Backend Engineer - HiveStack</Typography>
         </AccordionSummary>
@@ -111,7 +102,7 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Full-stack Engineer - Lone Wolf Technologies</Typography>
         </AccordionSummary>
@@ -124,7 +115,7 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Quantitative Analyst - Miko Software</Typography>
         </AccordionSummary>
@@ -137,7 +128,7 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Full-stack Engineer - R3mote.io</Typography>
         </AccordionSummary>
@@ -150,7 +141,7 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Mechanical Engineer - Probe</Typography>
         </AccordionSummary>
@@ -163,7 +154,7 @@ const Resume: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Software Engineer – Intern - ABB</Typography>
         </AccordionSummary>
@@ -263,7 +254,31 @@ const Resume: React.FC = () => {
         <strong>B.Sc. in Mechatronics Engineering</strong><br />
         University of Calgary · 2011 – 2016
       </Typography>
-    </Paper>
+      </Paper>
+
+      {/* Font selector on right - sticky */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          minWidth: '200px',
+          position: 'sticky',
+          top: 20,
+          height: 'fit-content',
+        }}
+      >
+        <FormControl fullWidth>
+          <InputLabel>Resume Font</InputLabel>
+          <Select value={fontFamily} label="Resume Font" onChange={handleFontChange}>
+            <MenuItem value="Roboto">Roboto</MenuItem>
+            <MenuItem value="Arial">Arial</MenuItem>
+            <MenuItem value="Times New Roman">Times New Roman</MenuItem>
+            <MenuItem value="Courier New">Courier New</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+    </Box>
   );
 };
 
