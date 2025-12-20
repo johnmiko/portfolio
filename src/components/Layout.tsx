@@ -25,7 +25,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Tabs value={getTabValue()} textColor="inherit" indicatorColor="secondary">
             <Tab label="Resume" component={Link} to="/" />
             <Tab label="Dota" component={Link} to="/dota" />
-            <Tab label="Alarm" component={Link} to="/alarm" />
+            <Tab label="Mold" component={Link} to="/alarm" />
           </Tabs>
         </Toolbar>
       </AppBar>

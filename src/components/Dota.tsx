@@ -131,7 +131,6 @@ const Dota: React.FC = () => {
               <TableCell>Title</TableCell>
               <TableCell align="right">Score</TableCell>
               <TableCell align="left">Days Ago</TableCell>
-              <TableCell align="right">Duration</TableCell>
               <TableCell align="center">Your Rating</TableCell>
               <TableCell align="center">Action</TableCell>
             </TableRow>
@@ -139,13 +138,13 @@ const Dota: React.FC = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
+                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : matches.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
+                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
                   <Typography color="textSecondary">No matches found</Typography>
                 </TableCell>
               </TableRow>
@@ -168,11 +167,6 @@ const Dota: React.FC = () => {
                   <TableCell align="left">
                     <Typography variant="body2">
                       {match.days_ago_pretty || '—'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography variant="body2">
-                      {typeof match.duration_min === 'number' ? `${match.duration_min}m` : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
