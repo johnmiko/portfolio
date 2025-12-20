@@ -50,10 +50,10 @@ const Dota: React.FC = () => {
   const fetchMatches = async () => {
     try {
       setLoading(true);
-      // Prefer cached endpoint; fall back to live if unavailable
-      let response = await fetch(`${DOTA_API_URL}/api/matches_cached`);
+      // Fetch from latest_matches (served by /api/matches); optional fallback to cached if needed
+      let response = await fetch(`${DOTA_API_URL}/api/matches`);
       if (!response.ok) {
-        response = await fetch(`${DOTA_API_URL}/api/matches`);
+        response = await fetch(`${DOTA_API_URL}/api/matches_cached`);
       }
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
