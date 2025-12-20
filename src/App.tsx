@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Resume from './components/Resume';
 import Dota from './components/Dota';
 import Alarm from './components/Alarm';
+import Crib from './components/Crib';
 
 const theme = createTheme({
   palette: {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<Resume />} />
             <Route path="/dota" element={<Dota />} />
             <Route path="/alarm" element={<Alarm />} />
+            <Route path="/crib" element={<Crib />} />
           </Routes>
         </Layout>
       </Router>
