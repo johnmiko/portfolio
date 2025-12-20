@@ -125,10 +125,6 @@ const Alarm: React.FC = () => {
     setTakenTimes({});
     setEfficiencyAlerts(new Set());
     
-    // Calculate earliest meal time (165 minutes from start time)
-    const mealTimeCalc = new Date(startTime.getTime() + 165 * 60 * 1000);
-    setMealTime(mealTimeCalc);
-    
     setStartTimeDialog(false);
     startTimer();
   };
@@ -162,6 +158,30 @@ const Alarm: React.FC = () => {
       console.log('Audio not supported, efficiency alert reached silently');
     }
   };
+
+  const computeEarliestTime = (medId: string, memo: Map<string, Date | null> = new Map()): Date | null => {
+    if (memo.has(medId)) return memo.get(medId) ?? null;
+    const med = medications.find(m => m.id === medId);
+    if (!med) return null;
+
+    let base: Date | null = null;
+    if (med.relativeTo) {
+      base = takenTimes[med.relativeTo] || computeEarliestTime(med.relativeTo, memo);
+    } else {
+      base = startTimes[medId] || null;
+    }
+    if (!base) {
+      memo.set(medId, null);
+      return null;
+    }
+    const ts = new Date(base.getTime() + (med.minTime || 0) * 60 * 1000);
+    memo.set(medId, ts);
+    return ts;
+  };
+
+  useEffect(() => {
+    setMealTime(computeEarliestTime('meal'));
+  }, [startTimes, takenTimes]);
 
   const checkAlarms = () => {
     const now = new Date();
@@ -260,6 +280,9 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
     return 'default';
   };
 
+  const baseStart = startTimes['batch1'];
+  const mealMinutes = mealTime && baseStart ? Math.round((mealTime.getTime() - baseStart.getTime()) / 60000) : null;
+
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h4" component="h1" gutterBottom>
@@ -275,7 +298,9 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
             <strong>Earliest First Meal Time:</strong> {mealTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            (2 hours 45 minutes after starting serrapeptase)
+            {mealMinutes !== null
+              ? `(~${mealMinutes} minutes after starting serrapeptase)`
+              : 'Based on current timing of prior meds.'}
           </Typography>
         </Alert>
       )}
