@@ -2,10 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
+import Resume from './components/Resume';
 import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 
-const Resume = lazy(() => import('./components/Resume'));
 const Dota = lazy(() => import('./components/Dota'));
 const Alarm = lazy(() => import('./components/Alarm'));
 const Crib = lazy(() => import('./components/Crib'));
