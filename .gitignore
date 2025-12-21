@@ -10,3 +10,4 @@ dist
 coverage/
 .nyc_output/
 dist/
+to do.txt

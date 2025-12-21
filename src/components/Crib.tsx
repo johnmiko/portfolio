@@ -1,137 +1,109 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
-  MenuItem,
-  Select,
-  Typography,
-  Alert,
-  Stack,
   Chip,
+  Divider,
+  Stack,
+  Typography,
 } from '@mui/material';
-// Removed Grid due to version/type mismatches; using Stack/Box for layout.
 
-interface Opponent {
-  key: string;
-  label: string;
-  description: string;
-}
+type ActionType =
+  | 'select_crib_cards'
+  | 'select_card_to_play'
+  | 'waiting_for_computer'
+  | 'game_over';
 
-interface CardModel {
-  rank: number;
-  suit: number;
+interface CardData {
+  rank: string;
+  suit: string;
+  symbol: string;
+  value: number;
 }
 
 interface GameStateResponse {
-  session_id: string;
-  phase: string;
-  player_hand: CardModel[];
-  opponent_score: number;
-  player_score: number;
-  dealer: number;
-  starter_card: CardModel | null;
+  game_id: string;
+  action_required: ActionType;
   message: string;
-  crib_owner: string;
-  opponent_cards_left: number;
-  cards_played: Array<{ player: CardModel | null; opponent: CardModel | null }>;
+  your_hand: CardData[];
+  table_cards: CardData[];
+  scores: { you: number; computer: number };
+  dealer: string;
+  table_value: number;
+  starter_card?: CardData | null;
+  valid_card_indices: number[];
+  game_over: boolean;
+  winner?: string | null;
 }
 
-const CRIB_API_URL =
-  import.meta.env.VITE_CRIB_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_CRIB_API_URL || 'http://localhost:8000';
 
-const suitSymbols: { [key: number]: string } = {
-  1: '♠',
-  2: '♥',
-  3: '♦',
-  4: '♣',
-};
+const suitColor = (suit: string) =>
+  suit === 'hearts' || suit === 'diamonds' ? '#c62828' : '#1b1b1b';
 
-const rankNames: { [key: number]: string } = {
-  1: 'A',
-  2: '2',
-  3: '3',
-  4: '4',
-  5: '5',
-  6: '6',
-  7: '7',
-  8: '8',
-  9: '9',
-  10: '10',
-  11: 'J',
-  12: 'Q',
-  13: 'K',
-};
-
-const cardToString = (card: CardModel): string =>
-  `${rankNames[card.rank]}${suitSymbols[card.suit]}`;
-
-const getCardColor = (card: CardModel): string => {
-  // Hearts (2) and Diamonds (3) are red; Spades (1) and Clubs (4) are black
-  return card.suit === 2 || card.suit === 3 ? 'red' : 'black';
+const wsUrlFor = (httpUrl: string, gameId: string) => {
+  const base = new URL(httpUrl);
+  base.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
+  base.pathname = `/ws/${gameId}`;
+  base.search = '';
+  return base.toString();
 };
 
 const Crib: React.FC = () => {
-  const [opponents, setOpponents] = useState<Opponent[]>([]);
-  const [selectedOpponent, setSelectedOpponent] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [game, setGame] = useState<GameStateResponse | null>(null);
+  const [selectedCrib, setSelectedCrib] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const wsRef = useRef<WebSocket | null>(null);
 
-  // Game state
-  const [gameState, setGameState] = useState<GameStateResponse | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [selectedCribCards, setSelectedCribCards] = useState<number[]>([]);
-  const [opponentCardsLeft, setOpponentCardsLeft] = useState(4);
+  const gameId = game?.game_id;
+
+  const connectWs = useMemo(() => {
+    if (!gameId) return null;
+    return wsUrlFor(API_BASE, gameId);
+  }, [gameId]);
 
   useEffect(() => {
-    const loadOpponents = async () => {
+    if (!connectWs) return undefined;
+    setWsStatus('connecting');
+    const ws = new WebSocket(connectWs);
+    wsRef.current = ws;
+
+    ws.onopen = () => setWsStatus('connected');
+    ws.onmessage = (event) => {
       try {
-        const response = await fetch(`${CRIB_API_URL}/opponents`);
-        if (!response.ok) {
-          throw new Error(`API error: ${response.statusText}`);
-        }
-        const data: Opponent[] = await response.json();
-        setOpponents(data);
-        if (data.length > 0) {
-          setSelectedOpponent(data[0].key);
-        }
+        const state: GameStateResponse = JSON.parse(event.data);
+        setGame(state);
+        setSelectedCrib([]);
+        setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load opponents');
+        console.error('Failed to parse websocket message', err);
       }
     };
+    ws.onclose = () => setWsStatus('disconnected');
+    ws.onerror = () => setWsStatus('disconnected');
 
-    loadOpponents();
-  }, []);
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [connectWs]);
 
-  useEffect(() => {
-    if (gameState?.cards_played) {
-      console.log(`Cards played updated: ${gameState.cards_played.length} rounds`);
-      console.log(gameState.cards_played);
-    }
-  }, [gameState?.cards_played]);
-
-  const startNewGame = async () => {
-    if (!selectedOpponent) {
-      setError('Select an opponent first');
-      return;
-    }
+  const startGame = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${CRIB_API_URL}/game/new`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ opponent: selectedOpponent }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to start game');
+      const res = await fetch(`${API_BASE}/game/new`, { method: 'POST' });
+      if (!res.ok) {
+        throw new Error(`Failed to start game (${res.status})`);
       }
-      const data: GameStateResponse = await response.json();
-      setGameState(data);
-      setSessionId(data.session_id);
-      setSelectedCribCards([]);
-      setOpponentCardsLeft(4);
+      const state: GameStateResponse = await res.json();
+      setGame(state);
+      setSelectedCrib([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game');
     } finally {
@@ -139,90 +111,142 @@ const Crib: React.FC = () => {
     }
   };
 
-  const submitCribThrow = async () => {
-    if (!sessionId || !gameState) return;
-    if (selectedCribCards.length !== 2) {
-      setError('Select exactly 2 cards to discard');
-      return;
-    }
+  const submitAction = async (indices: number[]) => {
+    if (!gameId) return;
     try {
       setLoading(true);
-      const response = await fetch(`${CRIB_API_URL}/game/${sessionId}/throw-crib`, {
+      setError(null);
+      const res = await fetch(`${API_BASE}/game/${gameId}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ card_indices: selectedCribCards }),
+        body: JSON.stringify({ card_indices: indices }),
       });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || 'Failed to throw cards');
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Action failed (${res.status})`);
       }
-      const data: GameStateResponse = await response.json();
-      setGameState(data);
-      setSelectedCribCards([]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to throw cards');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const playCard = async (cardIndex: number) => {
-    if (!sessionId) return;
-    try {
-      setLoading(true);
-      const response = await fetch(`${CRIB_API_URL}/game/${sessionId}/play-card`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ card_index: cardIndex }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || 'Failed to play card');
-      }
-      const data: GameStateResponse = await response.json();
-      setGameState(data);
-      
-      // Now have opponent play
-      if (data.phase === 'play') {
-        const oppResponse = await fetch(`${CRIB_API_URL}/game/${sessionId}/opponent-play`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!oppResponse.ok) {
-          const text = await oppResponse.text();
-          throw new Error(text || 'Failed for opponent to play');
-        }
-        const oppData: GameStateResponse = await oppResponse.json();
-        setGameState(oppData);
-        setOpponentCardsLeft((prev) => Math.max(0, prev - 1));
+      const state: GameStateResponse = await res.json();
+      setGame(state);
+      if (state.action_required !== 'select_crib_cards') {
+        setSelectedCrib([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to play card');
+      setError(err instanceof Error ? err.message : 'Action failed');
     } finally {
       setLoading(false);
     }
   };
 
   const toggleCribCard = (index: number) => {
-    if (selectedCribCards.includes(index)) {
-      setSelectedCribCards(selectedCribCards.filter((i) => i !== index));
-    } else {
-      if (selectedCribCards.length < 2) {
-        setSelectedCribCards([...selectedCribCards, index]);
-      }
-    }
+    setSelectedCrib((prev) => {
+      if (prev.includes(index)) return prev.filter((i) => i !== index);
+      if (prev.length >= 2) return prev;
+      return [...prev, index];
+    });
   };
 
-  const currentOpponent = opponents.find((o) => o.key === selectedOpponent);
+  const goAllowed = game?.action_required === 'select_card_to_play' && (!game.valid_card_indices || game.valid_card_indices.length === 0);
+
+  const renderHand = () => {
+    if (!game) return null;
+
+    if (game.action_required === 'select_crib_cards') {
+      return (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              {game.message || 'Choose 2 cards for the crib'}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+              {game.your_hand.map((card, idx) => (
+                <Chip
+                  key={idx}
+                  label={card.symbol}
+                  onClick={() => toggleCribCard(idx)}
+                  color={selectedCrib.includes(idx) ? 'primary' : 'default'}
+                  variant={selectedCrib.includes(idx) ? 'filled' : 'outlined'}
+                  sx={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: suitColor(card.suit),
+                  }}
+                />
+              ))}
+            </Stack>
+            <Button
+              variant="contained"
+              onClick={() => submitAction(selectedCrib)}
+              disabled={loading || selectedCrib.length !== 2}
+            >
+              {loading ? 'Submitting...' : 'Submit crib cards'}
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (game.action_required === 'select_card_to_play') {
+      return (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              {game.message || 'Play a card'}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {game.your_hand.map((card, idx) => (
+                <Chip
+                  key={idx}
+                  label={card.symbol}
+                  onClick={() => submitAction([idx])}
+                  disabled={!game.valid_card_indices.includes(idx) || loading}
+                  sx={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: suitColor(card.suit),
+                    opacity: game.valid_card_indices.includes(idx) ? 1 : 0.45,
+                  }}
+                  variant={game.valid_card_indices.includes(idx) ? 'filled' : 'outlined'}
+                  color={game.valid_card_indices.includes(idx) ? 'primary' : 'default'}
+                />
+              ))}
+            </Stack>
+            <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                onClick={() => submitAction([])}
+                disabled={loading || (!goAllowed && game.valid_card_indices.length > 0)}
+              >
+                Say "Go"
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            {game.message || 'Waiting for computer'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {game.action_required === 'waiting_for_computer'
+              ? 'Computer is playing...'
+              : 'Game over. Start a new game to play again.'}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
         Cribbage
       </Typography>
-      <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-        Play a hand against an AI opponent. Choose your opponent and discard
-        cards strategically.
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Play a quick game against the computer using the new API with live updates.
       </Typography>
 
       {error && (
@@ -231,297 +255,109 @@ const Crib: React.FC = () => {
         </Alert>
       )}
 
-      {!gameState ? (
-        <Card sx={{ mb: 3 }}>
+      <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="center">
+        <Button variant="contained" onClick={startGame} disabled={loading}>
+          {loading ? 'Starting...' : game ? 'Restart game' : 'Start game'}
+        </Button>
+        <Typography variant="caption" color="text.secondary">
+          WS: {wsStatus}
+        </Typography>
+      </Stack>
+
+      {!game ? (
+        <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Select an Opponent
+              Ready when you are
             </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-              <Select
-                value={selectedOpponent}
-                onChange={(e) => setSelectedOpponent(e.target.value)}
-                displayEmpty
-                fullWidth
-                size="small"
-              >
-                {opponents.map((opp) => (
-                  <MenuItem key={opp.key} value={opp.key}>
-                    {opp.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              <Button
-                variant="contained"
-                onClick={startNewGame}
-                disabled={loading || !selectedOpponent}
-              >
-                {loading ? 'Starting...' : 'Play'}
-              </Button>
-            </Stack>
-            {currentOpponent && (
-              <Typography variant="body2" color="textSecondary">
-                {currentOpponent.description}
-              </Typography>
-            )}
+            <Typography variant="body2" color="text.secondary">
+              Click start to deal a new hand and open a live connection to the crib backend.
+            </Typography>
           </CardContent>
         </Card>
       ) : (
         <Stack spacing={3}>
-          {/* Score and Info */}
-          <Box>
-            <Card>
-              <CardContent>
-                <Stack direction="row" spacing={3} justifyContent="space-between">
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Your Score
-                    </Typography>
-                    <Typography variant="h5">{gameState.player_score}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      {currentOpponent?.label} Opponent Score
-                    </Typography>
-                    <Typography variant="h5">{gameState.opponent_score}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Phase
-                    </Typography>
-                    <Typography variant="body2">{gameState.phase}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Crib
-                    </Typography>
-                    <Typography variant="body2">
-                      {gameState.crib_owner === 'player' ? 'Yours' : 'Opponent'}
-                    </Typography>
-                  </Box>
-                  {gameState.starter_card && (
-                    <Box>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Starter
-                      </Typography>
-                      <Typography variant="body2">
-                        {cardToString(gameState.starter_card)}
-                      </Typography>
-                    </Box>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
-          </Box>
-
-          {/* Game Phase Content */}
-          {gameState.phase === 'crib_throw' && (
-            <Box>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {gameState.message}
-                  </Typography>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Your Hand (select 2 cards to discard):
-                    </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      {gameState.player_hand.map((card, idx) => (
-                        <Chip
-                          key={idx}
-                          label={cardToString(card)}
-                          onClick={() => toggleCribCard(idx)}
-                          color={
-                            selectedCribCards.includes(idx) ? 'primary' : 'default'
-                          }
-                          variant={
-                            selectedCribCards.includes(idx) ? 'filled' : 'outlined'
-                          }
-                          sx={{
-                            fontSize: '1rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            color: getCardColor(card),
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                  <Button
-                    variant="contained"
-                    onClick={submitCribThrow}
-                    disabled={
-                      loading || selectedCribCards.length !== 2
-                    }
-                  >
-                    {loading ? 'Submitting...' : 'Discard'}
-                  </Button>
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-
-          {gameState.phase === 'play' && (
-            <>
-              {/* Cards Played */}
-              {gameState.cards_played.length > 0 && (
+          <Card>
+            <CardContent>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
                 <Box>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        Cards Played
-                      </Typography>
-                      <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                        {gameState.cards_played.map((round, idx) => (
-                          <Box
-                            key={idx}
-                            sx={{
-                              width: {
-                                xs: '100%',
-                                sm: 'calc(50% - 16px)',
-                                md: 'calc(33.33% - 16px)',
-                              },
-                            }}
-                         >
-                            <Card variant="outlined">
-                              <CardContent>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Round {idx + 1}
-                                </Typography>
-                                <Stack spacing={1}>
-                                  <Box>
-                                    <Typography variant="caption" color="textSecondary">
-                                      Your Card:
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        fontWeight: 'bold',
-                                        color: round.player ? getCardColor(round.player) : 'inherit',
-                                      }}
-                                    >
-                                      {round.player ? cardToString(round.player) : '—'}
-                                    </Typography>
-                                  </Box>
-                                  <Box>
-                                    <Typography variant="caption" color="textSecondary">
-                                      {currentOpponent?.label} Opponent Card:
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        fontWeight: 'bold',
-                                        color: round.opponent ? getCardColor(round.opponent) : 'inherit',
-                                      }}
-                                    >
-                                      {round.opponent ? cardToString(round.opponent) : '—'}
-                                    </Typography>
-                                  </Box>
-                                </Stack>
-                              </CardContent>
-                            </Card>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </CardContent>
-                  </Card>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Your score
+                  </Typography>
+                  <Typography variant="h5">{game.scores.you}</Typography>
                 </Box>
-              )}
-
-              {/* Player Hand and Opponent Info */}
-              <Box>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {gameState.message}
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Computer score
+                  </Typography>
+                  <Typography variant="h5">{game.scores.computer}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Dealer
+                  </Typography>
+                  <Typography variant="body2">{game.dealer === 'you' ? 'You' : 'Computer'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Table count
+                  </Typography>
+                  <Typography variant="body2">{game.table_value}</Typography>
+                </Box>
+                {game.starter_card && (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Starter
                     </Typography>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-                      <Box>
-                        <Typography variant="subtitle2" color="textSecondary">
-                          Current Count
-                        </Typography>
-                        <Typography variant="h5">
-                          {gameState.cards_played.reduce((sum, round) => {
-                            let roundCount = 0;
-                            if (round.player) {
-                              const rank = round.player.rank;
-                              roundCount += rank === 11 || rank === 12 || rank === 13 ? 10 : Math.min(rank, 10);
-                            }
-                            if (round.opponent) {
-                              const rank = round.opponent.rank;
-                              roundCount += rank === 11 || rank === 12 || rank === 13 ? 10 : Math.min(rank, 10);
-                            }
-                            return sum + roundCount;
-                          }, 0)}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle2" color="textSecondary">
-                          {currentOpponent?.label} Opponent Cards Left
-                        </Typography>
-                        <Typography variant="h5">{opponentCardsLeft}</Typography>
-                      </Box>
-                    </Stack>
-                    {gameState.crib_owner === 'player' && gameState.cards_played.length >= 1 && gameState.cards_played[gameState.cards_played.length - 1].opponent && !gameState.cards_played[gameState.cards_played.length - 1].player && (
-                      <Box sx={{ mb: 2, p: 1.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                          {currentOpponent?.label} Opponent played:
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: getCardColor(gameState.cards_played[gameState.cards_played.length - 1].opponent!) }}>
-                          {cardToString(gameState.cards_played[gameState.cards_played.length - 1].opponent!)}
-                        </Typography>
-                      </Box>
-                    )}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Your Hand (click to play):
-                      </Typography>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {gameState.player_hand.map((card, idx) => (
-                          <Chip
-                            key={idx}
-                            label={cardToString(card)}
-                            onClick={() => playCard(idx)}
-                            sx={{
-                              fontSize: '1rem',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              color: getCardColor(card),
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Box>
-            </>
-          )}
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: suitColor(game.starter_card.suit) }}>
+                      {game.starter_card.symbol}
+                    </Typography>
+                  </Box>
+                )}
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle2" color="text.secondary">
+                Status
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {game.message}
+              </Typography>
+            </CardContent>
+          </Card>
 
-          {gameState.phase === 'scoring' && (
-            <Box>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Scoring Phase
-                  </Typography>
-                  <Typography variant="body2">
-                    Hands are being scored. Final results coming soon.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    sx={{ mt: 2 }}
-                    onClick={() => {
-                      setGameState(null);
-                      setSessionId(null);
-                    }}
-                  >
-                    Play Another Hand
-                  </Button>
-                </CardContent>
-              </Card>
-            </Box>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Table
+              </Typography>
+              {game.table_cards.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No cards on the table yet.
+                </Typography>
+              ) : (
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {game.table_cards.map((card, idx) => (
+                    <Chip
+                      key={`${card.symbol}-${idx}`}
+                      label={card.symbol}
+                      sx={{
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        color: suitColor(card.suit),
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </CardContent>
+          </Card>
+
+          {renderHand()}
+
+          {game.game_over && (
+            <Alert severity="success">
+              Game over. Winner: {game.winner === 'you' ? 'You' : 'Computer'}.
+            </Alert>
           )}
         </Stack>
       )}
