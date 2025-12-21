@@ -42,16 +42,21 @@ const Dota: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [ratingScoreInput, setRatingScoreInput] = useState<string>('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchMatches();
   }, []);
 
-  const fetchMatches = async () => {
+  const fetchMatches = async (updateDb: boolean = false) => {
     try {
       setLoading(true);
-      // Fetch from latest_matches (served by /api/matches); optional fallback to cached if needed
-      let response = await fetch(`${DOTA_API_URL}/api/matches`);
+      // Fetch from /api/matches with optional update_db parameter
+      const url = updateDb 
+        ? `${DOTA_API_URL}/api/matches?update_db=true`
+        : `${DOTA_API_URL}/api/matches`;
+      
+      let response = await fetch(url);
       if (!response.ok) {
         response = await fetch(`${DOTA_API_URL}/api/matches_cached`);
       }
@@ -66,6 +71,15 @@ const Dota: React.FC = () => {
       console.error('Fetch error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateLatestMatches = async () => {
+    try {
+      setUpdating(true);
+      await fetchMatches(true);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -117,6 +131,23 @@ const Dota: React.FC = () => {
         The purpose of rating the match is to have some manual check to see how accurate the scores are.<br />
         Top-scored Dota 2 games, ranked by automatic analysis. Click a match to rate it.
       </Typography>
+
+      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+        <Button
+          variant="contained"
+          onClick={updateLatestMatches}
+          disabled={updating || loading}
+        >
+          {updating ? 'Updating...' : 'Update Latest Matches Table'}
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => fetchMatches(false)}
+          disabled={loading}
+        >
+          Refresh
+        </Button>
+      </Box>
 
       {error && (
         <Typography color="error" sx={{ mb: 2 }}>
