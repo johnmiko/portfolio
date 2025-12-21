@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   CardContent,
-  Grid,
   MenuItem,
   Select,
   Typography,
@@ -12,6 +11,7 @@ import {
   Stack,
   Chip,
 } from '@mui/material';
+// Removed Grid due to version/type mismatches; using Stack/Box for layout.
 
 interface Opponent {
   key: string;
@@ -82,7 +82,6 @@ const Crib: React.FC = () => {
   const [gameState, setGameState] = useState<GameStateResponse | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedCribCards, setSelectedCribCards] = useState<number[]>([]);
-  const [selectedPlayCard, setSelectedPlayCard] = useState<number | null>(null);
 
   useEffect(() => {
     const loadOpponents = async () => {
@@ -124,7 +123,6 @@ const Crib: React.FC = () => {
       setGameState(data);
       setSessionId(data.session_id);
       setSelectedCribCards([]);
-      setSelectedPlayCard(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game');
     } finally {
@@ -152,7 +150,6 @@ const Crib: React.FC = () => {
       const data: GameStateResponse = await response.json();
       setGameState(data);
       setSelectedCribCards([]);
-      setSelectedPlayCard(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to throw cards');
     } finally {
@@ -175,7 +172,6 @@ const Crib: React.FC = () => {
       }
       const data: GameStateResponse = await response.json();
       setGameState(data);
-      setSelectedPlayCard(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to play card');
     } finally {
@@ -247,9 +243,9 @@ const Crib: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={3}>
+        <Stack spacing={3}>
           {/* Score and Info */}
-          <Grid item xs={12}>
+          <Box>
             <Card>
               <CardContent>
                 <Stack direction="row" spacing={3} justifyContent="space-between">
@@ -292,11 +288,11 @@ const Crib: React.FC = () => {
                 </Stack>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
           {/* Game Phase Content */}
           {gameState.phase === 'crib_throw' && (
-            <Grid item xs={12}>
+            <Box>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -339,22 +335,31 @@ const Crib: React.FC = () => {
                   </Button>
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           )}
 
           {gameState.phase === 'play' && (
             <>
               {/* Cards Played */}
               {gameState.cards_played.length > 0 && (
-                <Grid item xs={12}>
+                <Box>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         Cards Played
                       </Typography>
-                      <Grid container spacing={2}>
+                      <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                         {gameState.cards_played.map((round, idx) => (
-                          <Grid item xs={12} sm={6} md={4} key={idx}>
+                          <Box
+                            key={idx}
+                            sx={{
+                              width: {
+                                xs: '100%',
+                                sm: 'calc(50% - 16px)',
+                                md: 'calc(33.33% - 16px)',
+                              },
+                            }}
+                         >
                             <Card variant="outlined">
                               <CardContent>
                                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -392,16 +397,16 @@ const Crib: React.FC = () => {
                                 </Stack>
                               </CardContent>
                             </Card>
-                          </Grid>
+                          </Box>
                         ))}
-                      </Grid>
+                      </Stack>
                     </CardContent>
                   </Card>
-                </Grid>
+                </Box>
               )}
 
               {/* Player Hand and Opponent Info */}
-              <Grid item xs={12}>
+              <Box>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
@@ -437,12 +442,12 @@ const Crib: React.FC = () => {
                     </Box>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
             </>
           )}
 
           {gameState.phase === 'scoring' && (
-            <Grid item xs={12}>
+            <Box>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -463,9 +468,9 @@ const Crib: React.FC = () => {
                   </Button>
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           )}
-        </Grid>
+        </Stack>
       )}
     </Box>
   );
