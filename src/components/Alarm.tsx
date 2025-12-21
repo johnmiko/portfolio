@@ -776,16 +776,43 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
                 <Typography variant="subtitle2">
                   Total Fiber: <strong>{totalFiber.toFixed(1)}g</strong>
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Level: {fiberInfo.level}
-                </Typography>
               </Box>
 
-              <Alert severity="info">
-                <Typography variant="body2">
-                  {fiberInfo.description}
-                </Typography>
-              </Alert>
+              {/* All fiber effectiveness levels */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {[
+                  { range: '< 5g', level: 'None', description: 'Not enough fiber. Aim for at least 5g.' },
+                  { range: '5–10g', level: 'Minimal', description: 'Barely moves stool. High chance toxins sit longer. ~10–20% effective for clearance.' },
+                  { range: '10–15g', level: 'Slight', description: 'Slight help. Still slow transit for most people. ~30% effective.' },
+                  { range: '15–20g', level: 'Starting', description: 'Minimum where things start working. Some benefit. ~50% effective.' },
+                  { range: '20–25g', level: 'Decent', description: 'Decent. Many people okay here. Still suboptimal with binders. ~65–70%.' },
+                  { range: '25–30g', level: 'Solid', description: 'Solid baseline. Low reabsorption risk. ~80%.' },
+                  { range: '30–35g', level: 'Sweet Spot', description: 'Sweet spot for most. Good speed, good consistency. ~90%.' },
+                  { range: '> 35g', level: 'Excellent', description: 'Still good if tolerated. Marginal gains over 30 g. ~92–95%.' },
+                ].map((item, idx) => {
+                  const isCurrentLevel = fiberInfo.level === item.level;
+                  return (
+                    <Box
+                      key={idx}
+                      sx={{
+                        p: 1,
+                        backgroundColor: isCurrentLevel ? '#e3f2fd' : '#f5f5f5',
+                        border: isCurrentLevel ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                        borderRadius: 0.5,
+                        cursor: 'default',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ fontWeight: isCurrentLevel ? 'bold' : 'normal' }}>
+                        {item.range} — <strong>{item.level}</strong>
+                      </Typography>
+                      <Typography variant="caption" display="block" color="text.secondary" sx={{ fontSize: '0.7rem', lineHeight: 1.3 }}>
+                        {item.description}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
             </CardContent>
           </Card>
         </Box>

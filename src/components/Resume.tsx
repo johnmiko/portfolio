@@ -16,6 +16,25 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
+const calculateMonthsDuration = (startDate: Date): string => {
+  const now = new Date();
+  let months = (now.getFullYear() - startDate.getFullYear()) * 12;
+  months += now.getMonth() - startDate.getMonth();
+  
+  // Adjust if we haven't reached the anniversary date this month
+  if (now.getDate() < startDate.getDate()) {
+    months--;
+  }
+  
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  
+  if (years > 0) {
+    return `${years} year${years > 1 ? 's' : ''} ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`;
+  }
+  return `${months} month${months !== 1 ? 's' : ''}`;
+};
+
 const Resume: React.FC = () => {
   const [fontFamily, setFontFamily] = useState('Arial');
 
@@ -66,7 +85,7 @@ const Resume: React.FC = () => {
           <Typography variant="h6">Senior Test Engineer - SMART Technologies</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography variant="body2" color="text.secondary">2025 – Present (6 months)</Typography>
+          <Typography variant="body2" color="text.secondary">2025 – Present ({calculateMonthsDuration(new Date(2025, 0, 1))})</Typography>
           <ul>
             <li>Test lead on smartboard mini project, ensuring all critical bugs are resolved by release date.</li>
             <li>Automating interoperability tests and room control tests using Python.</li>
