@@ -82,6 +82,7 @@ const Crib: React.FC = () => {
   const [gameState, setGameState] = useState<GameStateResponse | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedCribCards, setSelectedCribCards] = useState<number[]>([]);
+  const [opponentCardsLeft, setOpponentCardsLeft] = useState(4);
 
   useEffect(() => {
     const loadOpponents = async () => {
@@ -103,6 +104,13 @@ const Crib: React.FC = () => {
     loadOpponents();
   }, []);
 
+  useEffect(() => {
+    if (gameState?.cards_played) {
+      console.log(`Cards played updated: ${gameState.cards_played.length} rounds`);
+      console.log(gameState.cards_played);
+    }
+  }, [gameState?.cards_played]);
+
   const startNewGame = async () => {
     if (!selectedOpponent) {
       setError('Select an opponent first');
@@ -123,6 +131,7 @@ const Crib: React.FC = () => {
       setGameState(data);
       setSessionId(data.session_id);
       setSelectedCribCards([]);
+      setOpponentCardsLeft(4);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game');
     } finally {
@@ -172,6 +181,21 @@ const Crib: React.FC = () => {
       }
       const data: GameStateResponse = await response.json();
       setGameState(data);
+      
+      // Now have opponent play
+      if (data.phase === 'play') {
+        const oppResponse = await fetch(`${CRIB_API_URL}/game/${sessionId}/opponent-play`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!oppResponse.ok) {
+          const text = await oppResponse.text();
+          throw new Error(text || 'Failed for opponent to play');
+        }
+        const oppData: GameStateResponse = await oppResponse.json();
+        setGameState(oppData);
+        setOpponentCardsLeft((prev) => Math.max(0, prev - 1));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to play card');
     } finally {
@@ -415,11 +439,40 @@ const Crib: React.FC = () => {
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
                       <Box>
                         <Typography variant="subtitle2" color="textSecondary">
+                          Current Count
+                        </Typography>
+                        <Typography variant="h5">
+                          {gameState.cards_played.reduce((sum, round) => {
+                            let roundCount = 0;
+                            if (round.player) {
+                              const rank = round.player.rank;
+                              roundCount += rank === 11 || rank === 12 || rank === 13 ? 10 : Math.min(rank, 10);
+                            }
+                            if (round.opponent) {
+                              const rank = round.opponent.rank;
+                              roundCount += rank === 11 || rank === 12 || rank === 13 ? 10 : Math.min(rank, 10);
+                            }
+                            return sum + roundCount;
+                          }, 0)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" color="textSecondary">
                           {currentOpponent?.label} Opponent Cards Left
                         </Typography>
-                        <Typography variant="h5">{gameState.opponent_cards_left}</Typography>
+                        <Typography variant="h5">{opponentCardsLeft}</Typography>
                       </Box>
                     </Stack>
+                    {gameState.crib_owner === 'player' && gameState.cards_played.length >= 1 && gameState.cards_played[gameState.cards_played.length - 1].opponent && !gameState.cards_played[gameState.cards_played.length - 1].player && (
+                      <Box sx={{ mb: 2, p: 1.5, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                          {currentOpponent?.label} Opponent played:
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: getCardColor(gameState.cards_played[gameState.cards_played.length - 1].opponent!) }}>
+                          {cardToString(gameState.cards_played[gameState.cards_played.length - 1].opponent!)}
+                        </Typography>
+                      </Box>
+                    )}
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>
                         Your Hand (click to play):
