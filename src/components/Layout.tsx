@@ -11,7 +11,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         return 0;
       case '/dota':
         return 1;
-      case '/alarm':
+      case '/mold':
         return 2;
       case '/crib':
         return 3;
@@ -29,7 +29,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Tabs value={getTabValue()} textColor="inherit" indicatorColor="secondary">
             <Tab label="Resume" component={Link} to="/" />
             <Tab label="Dota" component={Link} to="/dota" />
-            <Tab label="Mold" component={Link} to="/alarm" />
+            <Tab label="Mold" component={Link} to="/mold" />
             <Tab label="Crib" component={Link} to="/crib" />
             <Tab label="Misc" component={Link} to="/misc" />
           </Tabs>

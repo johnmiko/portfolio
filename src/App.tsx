@@ -7,7 +7,7 @@ import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 
 const Dota = lazy(() => import('./components/Dota'));
-const Alarm = lazy(() => import('./components/Alarm'));
+const Mold = lazy(() => import('./components/Mold'));
 const Crib = lazy(() => import('./components/Crib'));
 const Miscellaneous = lazy(() => import('./components/Miscellaneous'));
 
@@ -33,7 +33,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Resume />} />
               <Route path="/dota" element={<Dota />} />
-              <Route path="/alarm" element={<Alarm />} />
+              <Route path="/mold" element={<Mold />} />
               <Route path="/crib" element={<Crib />} />
               <Route path="/misc" element={<Miscellaneous />} />
             </Routes>
