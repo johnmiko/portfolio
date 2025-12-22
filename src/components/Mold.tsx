@@ -488,6 +488,22 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
           Medication Timing Alarm
         </Typography>
         <Box display="flex" alignItems="center" gap={1}>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            onClick={() => {
+              playEfficiencySound();
+              if (showNotifications && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification('Test Alarm', {
+                  body: `Test alarm at ${alarmEfficiency}% efficiency`,
+                  icon: '/android-chrome-192x192.png',
+                });
+              }
+            }}
+          >
+            Test Alarm
+          </Button>
           <FormControlLabel
             control={<Switch checked={showNotifications} onChange={(e) => setShowNotifications(e.target.checked)} />}
             label="Desktop Notifications"

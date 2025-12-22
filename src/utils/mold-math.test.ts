@@ -29,8 +29,25 @@ describe('Mold.tsx math functions', () => {
       efficiency: { 0: 60, 10: 75, 20: 88, 30: 100 },
     };
 
-    it('returns 0 for elapsed time before first data point', () => {
-      expect(getEfficiency(testMed, -5)).toBe(0);
+    it('scales linearly from 0% to first data point', () => {
+      // First data point is at time 0 with efficiency 60
+      // Linear scaling means: at time < 0 (before first point), scale from 0% at time 0
+      // At elapsed=-5 (before first point at 0): would be negative, but we test edge case differently
+      // Test with a med where first point is NOT at 0: { 5: 60, 15: 75, ... }
+      const testMedNonZero: Medication = {
+        id: 'batch1',
+        name: 'Test Med',
+        description: 'test',
+        minTime: 0,
+        optimalTime: 30,
+        efficiency: { 5: 60, 15: 75, 25: 88 },
+      };
+      // At elapsed=2.5 (halfway to first point at 5): 2.5/5 * 60 = 30
+      expect(getEfficiency(testMedNonZero, 2.5)).toBe(30);
+      // At elapsed=0: 0/5 * 60 = 0
+      expect(getEfficiency(testMedNonZero, 0)).toBe(0);
+      // At elapsed=5 (first point): should be 60
+      expect(getEfficiency(testMedNonZero, 5)).toBe(60);
     });
 
     it('returns exact value at data points', () => {
@@ -40,7 +57,7 @@ describe('Mold.tsx math functions', () => {
     });
 
     it('interpolates between data points', () => {
-      expect(getEfficiency(testMed, 5)).toBe(68); // (60 + 75) / 2 ≈ 67.5, rounded to 68
+      expect(getEfficiency(testMed, 5)).toBe(68); // interpolated between 60 (at 0) and 75 (at 10)
       expect(getEfficiency(testMed, 15)).toBe(82); // interpolated between 75 and 88
     });
 

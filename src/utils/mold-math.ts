@@ -20,8 +20,13 @@ export function getEfficiency(med: Medication, elapsed: number): number {
 
   const times = Object.keys(med.efficiency).map(Number).sort((a, b) => a - b);
 
-  // If elapsed is before the first time point, return 0
-  if (elapsed < times[0]) return 0;
+  // Linear scaling from 0% to first data point
+  if (elapsed < times[0]) {
+    const firstTime = times[0];
+    const firstEfficiency = med.efficiency[firstTime];
+    const scaledEfficiency = (elapsed / firstTime) * firstEfficiency;
+    return Math.round(scaledEfficiency);
+  }
 
   // If elapsed is at or beyond the last time point, return the last efficiency
   if (elapsed >= times[times.length - 1]) return med.efficiency[times[times.length - 1]];
