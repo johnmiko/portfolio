@@ -39,7 +39,7 @@ interface GameStateResponse {
   winner?: string | null;
 }
 
-const API_BASE = import.meta.env.VITE_CRIB_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_CRIB_API_URL || 'http://localhost:8001';
 
 const suitColor = (suit: string) =>
   suit === 'hearts' || suit === 'diamonds' ? '#c62828' : '#1b1b1b';
@@ -106,6 +106,29 @@ const Crib: React.FC = () => {
       setSelectedCrib([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startTestGame = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`${API_BASE}/game/new`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preset: 'aces_twos_vs_threes_fours', dealer: 'human' }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Failed to start test game (${res.status})`);
+      }
+      const state: GameStateResponse = await res.json();
+      setGame(state);
+      setSelectedCrib([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start test game');
     } finally {
       setLoading(false);
     }
@@ -258,6 +281,9 @@ const Crib: React.FC = () => {
       <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="center">
         <Button variant="contained" onClick={startGame} disabled={loading}>
           {loading ? 'Starting...' : game ? 'Restart game' : 'Start game'}
+        </Button>
+        <Button variant="outlined" onClick={startTestGame} disabled={loading}>
+          Test game (A/2 vs 3/4)
         </Button>
         <Typography variant="caption" color="text.secondary">
           WS: {wsStatus}
