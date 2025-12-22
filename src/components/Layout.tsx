@@ -15,6 +15,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         return 2;
       case '/crib':
         return 3;
+      case '/misc':
+        return 4;
       default:
         return 0;
     }
@@ -29,6 +31,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <Tab label="Dota" component={Link} to="/dota" />
             <Tab label="Mold" component={Link} to="/alarm" />
             <Tab label="Crib" component={Link} to="/crib" />
+            <Tab label="Misc" component={Link} to="/misc" />
           </Tabs>
         </Toolbar>
       </AppBar>

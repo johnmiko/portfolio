@@ -55,6 +55,20 @@ const Resume: React.FC = () => {
 
   const keywords = ['Python', 'Backend Development', 'Automation Testing', 'Cloud Computing', 'Machine Learning'];
 
+  const programmingExperience = [
+    { label: 'Python', startYear: 2013, endYear: undefined },
+    { label: 'Java', startYear: 2015, endYear: 2017 },
+    { label: 'React', startYear: 2021, endYear: undefined },
+    { label: 'SQL', startYear: 2014, endYear: undefined },
+  ];
+
+  const durationYears = (start: number, end?: number) => {
+    const nowYear = new Date().getFullYear();
+    return Math.max(0, (end ?? nowYear) - start);
+  };
+
+  const maxYears = Math.max(...programmingExperience.map((item) => durationYears(item.startYear, item.endYear)), 1);
+
   return (
     <Box sx={{ display: 'flex', gap: 3, p: 2, minHeight: '100vh', justifyContent: 'space-between' }}>
       {/* Resume centered */}
@@ -75,6 +89,10 @@ const Resume: React.FC = () => {
       <Typography variant="body2" color="text.secondary">
         Revision 36
       </Typography>
+
+      <Box sx={{ mb: 2 }}>
+        <Link href="#graphs">Graphs</Link>
+      </Box>
 
       <Typography variant="h4" component="h2" gutterBottom sx={{ mt: 4 }}>
         Experience
@@ -273,6 +291,47 @@ const Resume: React.FC = () => {
         <strong>B.Sc. in Mechatronics Engineering</strong><br />
         University of Calgary · 2011 – 2016
       </Typography>
+      <Box id="graphs" sx={{ mt: 6 }}>
+        <Typography variant="h4" gutterBottom>Graphs</Typography>
+        <Typography variant="subtitle1" gutterBottom>Programming experience over time</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
+          {programmingExperience.map((item) => {
+            const years = durationYears(item.startYear, item.endYear);
+            const percent = Math.min(100, (years / maxYears) * 100);
+            const label = item.endYear ? `${item.startYear}–${item.endYear}` : `${item.startYear}–Present`;
+            return (
+              <Box key={item.label}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {item.label}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ flex: 1, height: 10, bgcolor: 'grey.200', borderRadius: 1 }}>
+                    <Box sx={{ width: `${percent}%`, height: '100%', bgcolor: 'primary.main', borderRadius: 1 }} />
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {label} ({years} yr{years !== 1 ? 's' : ''})
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+        <Typography variant="subtitle1" gutterBottom>Timeline</Typography>
+        <Box sx={{ my: 2 }}>
+          <svg width="100%" height="140" viewBox="0 0 800 140">
+            <line x1="60" y1="80" x2="740" y2="80" stroke="#1976d2" strokeWidth="3" />
+            <circle cx="120" cy="80" r="6" fill="#1976d2" />
+            <text x="100" y="60" fontSize="12">2011 Start university</text>
+            <circle cx="360" cy="80" r="6" fill="#1976d2" />
+            <text x="320" y="60" fontSize="12">2016 Received B.Sc</text>
+            <circle cx="720" cy="80" r="6" fill="#1976d2" />
+            <text x="700" y="60" fontSize="12">Present</text>
+            <path d="M 420 30 v 35 q 0 10 10 10 h 180 q 10 0 10 -10 v -35" stroke="#d32f2f" strokeWidth="2" fill="none" />
+            <text x="470" y="20" fontSize="12" fill="#d32f2f">Developing mold poisoning (2017–2024)</text>
+          </svg>
+        </Box>
+        <Typography variant="caption" color="text.secondary">Graphs are illustrative; durations to "Present" update automatically.</Typography>
+      </Box>
       </Paper>
 
       {/* Font selector on right - sticky */}

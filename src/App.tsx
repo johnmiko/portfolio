@@ -9,6 +9,7 @@ import { Box, CircularProgress } from '@mui/material';
 const Dota = lazy(() => import('./components/Dota'));
 const Alarm = lazy(() => import('./components/Alarm'));
 const Crib = lazy(() => import('./components/Crib'));
+const Miscellaneous = lazy(() => import('./components/Miscellaneous'));
 
 const theme = createTheme({
   palette: {
@@ -34,6 +35,7 @@ function App() {
               <Route path="/dota" element={<Dota />} />
               <Route path="/alarm" element={<Alarm />} />
               <Route path="/crib" element={<Crib />} />
+              <Route path="/misc" element={<Miscellaneous />} />
             </Routes>
           </Suspense>
         </Layout>
