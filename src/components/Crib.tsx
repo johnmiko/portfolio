@@ -118,7 +118,7 @@ const Crib: React.FC = () => {
       const res = await fetch(`${API_BASE}/game/new`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preset: 'aces_twos_vs_threes_fours', dealer: 'human' }),
+        body: JSON.stringify({ preset: 'aces_twos_vs_threes_fours', dealer: 'you' }),
       });
       if (!res.ok) {
         const text = await res.text();
