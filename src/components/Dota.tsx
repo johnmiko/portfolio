@@ -45,8 +45,63 @@ const Dota: React.FC = () => {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    fetchMatches();
+    // Step 1: Immediately fetch from cache
+    fetchCachedMatches();
+    // Step 2: Then fetch fresh matches in the background
+    fetchFreshMatches();
   }, []);
+
+  const fetchCachedMatches = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${DOTA_API_URL}/api/matches_cached`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setMatches(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch cached matches');
+      console.error('Fetch cached error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFreshMatches = async () => {
+    try {
+      // Fetch fresh matches from the live API
+      const response = await fetch(`${DOTA_API_URL}/api/matches`);
+      if (!response.ok) {
+        console.warn('Failed to fetch fresh matches, using cache');
+        return;
+      }
+      const data = await response.json();
+      // Step 2b: Update the frontend table with fresh data
+      setMatches(data);
+      
+      // Step 3: Update the cached database in the background
+      updateCachedDatabase(data);
+    } catch (err) {
+      console.warn('Fresh matches fetch failed, using cache:', err);
+    }
+  };
+
+  const updateCachedDatabase = async (matchData: Match[]) => {
+    try {
+      // Send request to update the matches_cached database
+      await fetch(`${DOTA_API_URL}/api/update_cache`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ matches: matchData }),
+      });
+    } catch (err) {
+      console.error('Failed to update cache database:', err);
+    }
+  };
 
   const fetchMatches = async (updateDb: boolean = false) => {
     try {

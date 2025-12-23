@@ -31,9 +31,9 @@ const baseMedications: Medication[] = [
     id: 'batch1',
     name: 'Vitamin Batch 1',
     description: 'Sertraline, quetiapine, fish oil, etc. (take with fat)',
-    minTime: 0,
-    optimalTime: 30,
-    efficiency: { 0: 60, 10: 75, 20: 88, 30: 100 },
+    minTime: 30,
+    optimalTime: 60,
+    efficiency: { 30: 85, 45: 95, 60: 100 },
   },
   {
     id: 'batch2',
@@ -67,8 +67,9 @@ const baseMedications: Medication[] = [
     name: 'First Meal + Vitamin Batch 3',
     description: 'Safe immediately after chlorella',
     minTime: 0,
-    optimalTime: 0,
+    optimalTime: 90,
     relativeTo: 'chlorella',
+    efficiency: { 0: 70, 15: 75, 30: 90, 60: 95, 90: 100 },
   },
 ];
 
@@ -140,6 +141,9 @@ const Alarm: React.FC = () => {
   const beepIntervalRef = useRef<number | null>(null);
   const [alarmMedId, setAlarmMedId] = useState<string | null>(null);
   const [alarmMessage, setAlarmMessage] = useState<string | null>(null);
+  const [overrideTimeDialog, setOverrideTimeDialog] = useState(false);
+  const [overrideMedId, setOverrideMedId] = useState<string | null>(null);
+  const [overrideMinutesAgo, setOverrideMinutesAgo] = useState<string>('0');
 
   // Active medications set (base or demo)
   const medications = useDemo ? demoMedications : baseMedications;
@@ -404,9 +408,16 @@ const Alarm: React.FC = () => {
     return startTimes[medId] || null;
   };
 
-  const markAsTaken = (medId: string) => {
+  const markAsTaken = (medId: string, overrideMinutesAgo?: number) => {
     const now = new Date();
-    setTakenTimes(prev => ({ ...prev, [medId]: now }));
+    let takenTime = now;
+    
+    // If override is provided, calculate the time minutes ago
+    if (overrideMinutesAgo !== undefined && overrideMinutesAgo > 0) {
+      takenTime = new Date(now.getTime() - overrideMinutesAgo * 60000);
+    }
+    
+    setTakenTimes(prev => ({ ...prev, [medId]: takenTime }));
 
     // Stop alarm when acknowledging/taking a med
     if (alarmMedId === medId) {
@@ -419,6 +430,16 @@ const Alarm: React.FC = () => {
       setCurrentPhase(currentIndex + 1);
     } else {
       setCurrentPhase(-2); // completed
+    }
+  };
+
+  const handleOverrideTimeSubmit = () => {
+    if (overrideMedId) {
+      const minutesAgo = parseInt(overrideMinutesAgo, 10) || 0;
+      markAsTaken(overrideMedId, minutesAgo);
+      setOverrideTimeDialog(false);
+      setOverrideMedId(null);
+      setOverrideMinutesAgo('0');
     }
   };
 
@@ -697,9 +718,22 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
                     value={Math.min((elapsed / med.optimalTime) * 100, 100)}
                     sx={{ mb: 1 }}
                   />
-                  <Button variant="outlined" onClick={() => markAsTaken(med.id)}>
-                    Mark as Taken
-                  </Button>
+                  <Box display="flex" gap={1}>
+                    <Button variant="outlined" onClick={() => markAsTaken(med.id)}>
+                      Mark as Taken
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      size="small"
+                      onClick={() => {
+                        setOverrideMedId(med.id);
+                        setOverrideMinutesAgo('0');
+                        setOverrideTimeDialog(true);
+                      }}
+                    >
+                      Override Time
+                    </Button>
+                  </Box>
                 </Box>
               )}
 
@@ -852,6 +886,36 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
           <Button onClick={() => setStartTimeDialog(false)}>Cancel</Button>
           <Button onClick={confirmStartSequence} variant="contained">
             Start Sequence
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={overrideTimeDialog} onClose={() => setOverrideTimeDialog(false)}>
+        <DialogTitle>Override Medication Time</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" mb={2}>
+            How many minutes ago did you take this medication?
+          </Typography>
+          <TextField
+            type="number"
+            label="Minutes ago"
+            value={overrideMinutesAgo}
+            onChange={(e) => setOverrideMinutesAgo(e.target.value)}
+            fullWidth
+            inputProps={{ min: 0, step: 1 }}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOverrideTimeDialog(false);
+            setOverrideMedId(null);
+            setOverrideMinutesAgo('0');
+          }}>
+            Cancel
+          </Button>
+          <Button onClick={handleOverrideTimeSubmit} variant="contained">
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>
