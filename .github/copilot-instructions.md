@@ -1,6 +1,4 @@
 # AI Coding Assistant Instructions for Portfolio Project
-- If you ever write any code that involves calculations, make sure to write a unit test to test that the calculation is correct
-- When you are done completing any task, run the projects test suite to confirm that none of the existing functionality is broken
 
 ## Project Overview
 This is a React-based portfolio website with Material-UI, featuring tabs for personal projects (Resume, Dota, Alarm) and shared footer with contact info. Backends use FastAPI, deployed separately.
