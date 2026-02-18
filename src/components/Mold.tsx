@@ -137,8 +137,8 @@ const Alarm: React.FC = () => {
   const [proteinShakeCount, setProteinShakeCount] = useState<number>(0);
   const [phggCount, setPhggCount] = useState<number>(0);
   const [chiaSeedsCount, setChiaSeedsCount] = useState<number>(0);
-  const intervalRef = useRef<number | null>(null);
-  const beepIntervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | ReturnType<typeof setInterval> | null>(null);
+  const beepIntervalRef = useRef<number | ReturnType<typeof setInterval> | null>(null);
   const [alarmMedId, setAlarmMedId] = useState<string | null>(null);
   const [alarmMessage, setAlarmMessage] = useState<string | null>(null);
   const [overrideTimeDialog, setOverrideTimeDialog] = useState(false);
@@ -158,7 +158,7 @@ const Alarm: React.FC = () => {
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        window.clearInterval(intervalRef.current);
       }
     };
   }, []);
@@ -196,9 +196,9 @@ const Alarm: React.FC = () => {
 
   const startTimer = () => {
     if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      window.clearInterval(intervalRef.current);
     }
-    intervalRef.current = setInterval(checkAlarms, 1000);
+    intervalRef.current = window.setInterval(checkAlarms, 1000);
   };
 
   const playEfficiencySound = () => {
@@ -232,7 +232,7 @@ const Alarm: React.FC = () => {
     setTimeout(() => {
       // start immediate beep then every 1s until stopped (unless beepOnce is true)
       playEfficiencySound();
-      if (beepIntervalRef.current) clearInterval(beepIntervalRef.current);
+      if (beepIntervalRef.current) window.clearInterval(beepIntervalRef.current);
       if (!beepOnce) {
         beepIntervalRef.current = window.setInterval(playEfficiencySound, 1000);
       }
@@ -241,7 +241,7 @@ const Alarm: React.FC = () => {
 
   const stopAlarm = () => {
     if (beepIntervalRef.current) {
-      clearInterval(beepIntervalRef.current);
+      window.clearInterval(beepIntervalRef.current);
       beepIntervalRef.current = null;
     }
     setAlarmMedId(null);
@@ -543,7 +543,7 @@ const getEfficiency = (med: Medication, elapsed: number): number => {
                 const on = e.target.checked;
                 console.log(`[Alarm] Demo Mode toggled: ${on}`);
                 setUseDemo(on);
-                if (intervalRef.current) clearInterval(intervalRef.current);
+                if (intervalRef.current) window.clearInterval(intervalRef.current);
                 stopAlarm();
                 if (on) {
                   // Auto-start sequence in demo mode
