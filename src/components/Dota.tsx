@@ -28,12 +28,36 @@ interface Match {
   title?: string;
   tournament?: string;
   days_ago_pretty?: string;
+  start_time?: number;
 }
 
 const DOTA_API_URL =
   import.meta.env.VITE_DOTA_API_URL || 'https://dota-production-9f0c.up.railway.app';
 
 // Pretty days-ago formatting is now provided by the backend as days_ago_pretty.
+const getDaysAgo = (start_time?: number, fallback?: string) => {
+  if (!start_time) return fallback || '—';
+  const diffHours = Math.round((Date.now() - start_time * 1000) / (1000 * 3600));
+  if (diffHours < 24) {
+    if (diffHours === 0) return 'today';
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  }
+  const diffDays = Math.round(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  }
+  const diffWeeks = Math.round(diffDays / 7);
+  if (diffDays < 30) {
+    return `${diffWeeks} week${diffWeeks === 1 ? '' : 's'} ago`;
+  }
+  const diffMonths = Math.round(diffDays / 30);
+  return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+};
+
+const formatDate = (start_time?: number) => {
+  if (!start_time) return '—';
+  return new Date(start_time * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 const Dota: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -216,6 +240,7 @@ const Dota: React.FC = () => {
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
               <TableCell>Title</TableCell>
               <TableCell align="right">Score</TableCell>
+              <TableCell align="left">Date</TableCell>
               <TableCell align="left">Days Ago</TableCell>
               <TableCell align="center">Your Rating</TableCell>
               <TableCell align="center">Action</TableCell>
@@ -224,13 +249,13 @@ const Dota: React.FC = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
+                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : matches.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
+                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
                   <Typography color="textSecondary">No matches found</Typography>
                 </TableCell>
               </TableRow>
@@ -252,7 +277,12 @@ const Dota: React.FC = () => {
                   </TableCell>
                   <TableCell align="left">
                     <Typography variant="body2">
-                      {match.days_ago_pretty || '—'}
+                      {formatDate(match.start_time)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="left">
+                    <Typography variant="body2" color="textSecondary">
+                      {getDaysAgo(match.start_time, match.days_ago_pretty)}
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
