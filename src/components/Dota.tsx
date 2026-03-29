@@ -104,26 +104,8 @@ const Dota: React.FC = () => {
       const data = await response.json();
       // Step 2b: Update the frontend table with fresh data
       setMatches(data);
-      
-      // Step 3: Update the cached database in the background
-      updateCachedDatabase(data);
     } catch (err) {
       console.warn('Fresh matches fetch failed, using cache:', err);
-    }
-  };
-
-  const updateCachedDatabase = async (matchData: Match[]) => {
-    try {
-      // Send request to update the matches_cached database
-      await fetch(`${DOTA_API_URL}/api/update_cache`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ matches: matchData }),
-      });
-    } catch (err) {
-      console.error('Failed to update cache database:', err);
     }
   };
 
@@ -272,7 +254,7 @@ const Dota: React.FC = () => {
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {Math.round(match.final_score)}
+                      {typeof match.final_score === 'number' ? Math.round(match.final_score) : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell align="left">
@@ -286,7 +268,7 @@ const Dota: React.FC = () => {
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
-                    {match.user_score ? (
+                    {typeof match.user_score === 'number' ? (
                       <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                         {match.user_score}
                       </Typography>
